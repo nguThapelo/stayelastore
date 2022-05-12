@@ -1,0 +1,1 @@
+Creating an online store for our local street vendor/ spaza where you can get local goods such as fruits, vegetables and snacks. The products are as fresh online as they are locally. 
