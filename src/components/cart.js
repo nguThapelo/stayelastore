@@ -6,7 +6,7 @@ const Cart = ({ cart, setCart, handleChange }) => {
 
     const handleRemove = (id) => {
         const arr = cart.filter((item) => item.id !== id);
-        
+        setCart((arr))
         handlePrice();
     };
 
