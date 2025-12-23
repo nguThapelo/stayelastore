@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import '../styles/cart.css';
+import CheckoutDialog from './CheckoutDialog';
 
 const Cart = ({ cart, setCart, handleChange }) => {
     const [price, setPrice] = useState(0);
+    const [showCheckout, setShowCheckout] = useState(false); // New state
 
     const handleRemove = (id) => {
         const arr = cart.filter((item) => item.id !== id);
+        // console.log("🚀 ~ handleRemove ~ arr:", arr)
         setCart(arr);
         handlePrice();
     };
@@ -19,10 +22,16 @@ const Cart = ({ cart, setCart, handleChange }) => {
     useEffect(() => {
         handlePrice();
     }, [cart]);
+      // Calculate total
+    useEffect(() => {
+        const total = cart.reduce((sum, item) => sum + (item.amount * item.price), 0);
+        setPrice(total);
+    }, [cart]);
+
 
     const handleCheckout = () => {
         // Navigate to checkout page or trigger checkout logic
-        console.log('Proceeding to checkout with total:', price);
+        setShowCheckout(true);
         // Example: window.location.href = '/checkout';
     };
 
@@ -35,10 +44,13 @@ const Cart = ({ cart, setCart, handleChange }) => {
         );
     }
 
+
+
+  
     return (
         <div className="cart-container">
             <div className="cart-header">
-                <h1>Shopping Cart</h1>
+                <h1>cart</h1>
                 <span className="cart-count">{cart.length} items</span>
             </div>
 
@@ -48,21 +60,21 @@ const Cart = ({ cart, setCart, handleChange }) => {
                         <div className="cart-image">
                             <img src={item.img} alt={item.title} />
                         </div>
-                        
+
                         <div className="cart-details">
                             <h3>{item.title}</h3>
                             <p className="item-price">R{item.price}</p>
                         </div>
 
                         <div className="quantity-controls">
-                            <button 
+                            <button
                                 onClick={() => handleChange(item, -1)}
                                 className="qty-btn qty-minus"
                             >
                                 -
                             </button>
                             <span className="qty-display">{item.amount}</span>
-                            <button 
+                            <button
                                 onClick={() => handleChange(item, 1)}
                                 className="qty-btn qty-plus"
                             >
@@ -72,7 +84,7 @@ const Cart = ({ cart, setCart, handleChange }) => {
 
                         <div className="item-total">
                             <span>R{(item.amount * item.price).toLocaleString()}</span>
-                            <button 
+                            <button
                                 onClick={() => handleRemove(item.id)}
                                 className="remove-btn"
                             >
@@ -92,6 +104,12 @@ const Cart = ({ cart, setCart, handleChange }) => {
                     Proceed to Checkout →
                 </button>
             </div>
+            <CheckoutDialog
+                cart={cart}
+                total={price}
+                isOpen={showCheckout}
+                onClose={() => setShowCheckout(false)}
+            />
         </div>
     );
 };

@@ -3,8 +3,6 @@ import Home from './components/Home';
 import Navbar from './components/Navbar';
 import Cart from './components/cart';
 
-
-
 const App = () => {
   const [show, setShow] = useState(true);
   const [cart, setCart] = useState([]);
@@ -29,7 +27,7 @@ const App = () => {
     <div>
       <Navbar setShow={setShow} size={cart.length} />
       {show ? ( <Home handleClick={handleClick} /> )
-       : ( <Cart cart={cart} handleChange={handleChange} /> )}
+       : ( <Cart cart={cart} setCart ={setCart} handleChange={handleChange} /> )}
     </div>
   );
 }
