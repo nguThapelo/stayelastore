@@ -8,35 +8,43 @@ export async function GET(
 ) {
   try {
     await connectToDatabase();
-    const agent = await Agent.findById(params.id).lean() as any;
+    const agent = await Agent.findById(params.id).lean();
     
     if (!agent) {
-      return NextResponse.json({ success: false, error: 'Agent not found' }, { status: 404 });
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Agent not found' 
+      }, { status: 404 });
     }
 
-    const avgTransactionValue = 75; // R75 average township transaction
-    const estimatedVolume = agent.transactions * avgTransactionValue;
-    const fraudRisk = agent.transactions > 150 || agent.balance > 25000;
+    const avgTxnValue = 85; // R85 township average
+    const volumeEstimate = agent.transactions * avgTxnValue;
+    const highRisk = agent.transactions > 150 || agent.balance > 30000;
+    const tierProgress = agent.transactions < 50 ? 50 - agent.transactions : 200 - agent.transactions;
 
     return NextResponse.json({
       success: true,
       data: {
-        agent_id: agent._id.toString(),
+        agent_id: agent._id,
         name: agent.name,
+        phone: agent.phone.slice(-8), // Last 8 digits
         location: agent.location,
-        phone: agent.phone,
         level: agent.level.toUpperCase(),
-        balance: `R${agent.balance.toFixed(2)}`,
+        balance: `R${agent.balance.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}`,
         transactions: agent.transactions,
-        volume_30d: `R${estimatedVolume.toFixed(0)}`,
+        volume_30d: `R${volumeEstimate.toLocaleString('en-ZA')}`,
         commission_rate: agent.level === 'bronze' ? '2%' : agent.level === 'silver' ? '3.5%' : '4%',
-        next_tier: agent.transactions < 50 ? 50 : agent.transactions < 200 ? 200 : 'MAXED',
-        fraud_alert: fraudRisk ? '⚠️ High activity detected - review required' : '✅ Normal',
-        kpi_status: agent.transactions >= 50 ? 'excellent' : 'growing',
+        tier_progress: `${tierProgress} txns to next tier`,
+        fraud_alert: highRisk ? '⚠️ MANUAL REVIEW REQUIRED' : '✅ NORMAL',
+        performance: agent.transactions >= 50 ? 'EXCELLENT' : 'GROWING',
+        last_updated: new Date().toISOString(),
       },
     });
   } catch (error) {
     console.error('Dashboard error:', error);
-    return NextResponse.json({ success: false, error: 'Dashboard unavailable' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Dashboard unavailable' 
+    }, { status: 500 });
   }
 }

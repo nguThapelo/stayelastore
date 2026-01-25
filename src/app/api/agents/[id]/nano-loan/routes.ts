@@ -12,33 +12,38 @@ export async function POST(
     const agent = await Agent.findById(params.id);
     
     if (!agent) {
-      return NextResponse.json({ success: false, error: 'Agent not found' }, { status: 404 });
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Agent not found' 
+      }, { status: 404 });
     }
 
     const body = await request.json();
     const { amount, customerPhone } = body;
 
-    if (amount < 100 || amount > 50000 || !customerPhone) {
+    if (!customerPhone || typeof amount !== 'number' || amount < 100 || amount > 50000) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Loan amount must be R100-R50,000' 
+        error: 'Loan: R100-R50,000, valid customer phone required' 
       }, { status: 400 });
     }
 
-    // DeepSeek AI Credit Scoring
+    //  AI Credit Assessment
+    console.log(`🤖 AI Loan request: R${amount} by ${agent.name}`);
     const creditScore = await assessCreditScore(agent);
-    const maxLoan = Math.min(50000, creditScore * 0.06); // Conservative multiplier
+    const maxLoanLimit = Math.floor(creditScore * 0.06); // Conservative 6% of score
+    const finalMaxLoan = Math.min(50000, maxLoanLimit);
 
-    if (amount > maxLoan) {
+    if (amount > finalMaxLoan) {
       return NextResponse.json({
         success: false,
-        error: `Loan exceeds limit R${maxLoan.toFixed(0)} (Credit Score: ${creditScore})`,
+        error: `Loan limit exceeded. Max: R${finalMaxLoan.toLocaleString()} (Score: ${creditScore})`,
       }, { status: 400 });
     }
 
-    // Agent earns 3% loan origination fee
-    const loanFee = amount * 0.03;
-    agent.balance += loanFee;
+    // Agent commission (3% origination fee)
+    const originationFee = Math.round(amount * 0.03 * 100) / 100;
+    agent.balance += originationFee;
     agent.transactions += 1;
     await agent.save();
 
@@ -46,17 +51,22 @@ export async function POST(
       success: true,
       data: {
         loan_id: `LN${Date.now()}`,
-        principal: `R${amount.toFixed(2)}`,
+        principal: `R${amount.toLocaleString()}`,
+        interest_rate: '10%',
+        total_repayable: `R${(amount * 1.1).toLocaleString()}`,
         credit_score: creditScore,
-        ai_model: 'DeepSeek-Coder 6.7B Local',
-        agent_fee: `R${loanFee.toFixed(2)}`,
-        total_repayment: `R${(amount * 1.1).toFixed(2)}`,
-        repayment_terms: '30 days',
+        ai_model: 'DeepSeek-Coder-6.7B',
+        agent_fee: `R${originationFee.toFixed(2)}`,
+        terms: '30 days',
         status: 'approved',
+        disbursed_at: new Date().toISOString(),
       },
     });
   } catch (error) {
-    console.error('Loan error:', error);
-    return NextResponse.json({ success: false, error: 'Loan processing failed' }, { status: 500 });
+    console.error('Nano-loan error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Loan processing failed' 
+    }, { status: 500 });
   }
 }

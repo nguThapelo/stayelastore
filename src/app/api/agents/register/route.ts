@@ -9,17 +9,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { phone, name, location } = body;
 
-    if (!phone || !name || !location) {
+    if (!phone?.toString().startsWith('08') || !name || !location) {
       return NextResponse.json({
         success: false,
-        error: 'Phone, name, and location required',
+        error: 'Valid SA phone (08...), name, and location required',
       }, { status: 400 });
     }
 
     const agent = await Agent.create({ 
       phone: phone.toString(), 
-      name: name.toString(), 
-      location: location.toString() 
+      name: name.toString().trim(), 
+      location: location.toString().trim() 
     });
 
     return NextResponse.json({
@@ -32,21 +32,22 @@ export async function POST(request: NextRequest) {
         level: agent.level,
         balance: `R${agent.balance.toFixed(2)}`,
         status: 'active',
+        registered: agent.createdAt.toISOString(),
       },
     });
   } catch (error: any) {
-    console.error('Register error:', error);
+    console.error('Registration error:', error);
     
     if (error.code === 11000) {
       return NextResponse.json({
         success: false,
-        error: 'Phone number already registered',
+        error: 'Phone already registered',
       }, { status: 409 });
     }
     
     return NextResponse.json({
       success: false,
-      error: 'Registration failed - try again',
+      error: 'Registration failed',
     }, { status: 500 });
   }
 }

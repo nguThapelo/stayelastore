@@ -11,29 +11,35 @@ export async function POST(
     const agent = await Agent.findById(params.id);
     
     if (!agent) {
-      return NextResponse.json({ success: false, error: 'Agent not found' }, { status: 404 });
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Agent not found' 
+      }, { status: 404 });
     }
 
     const body = await request.json();
     const { type, amount, customerPhone } = body;
 
-    if (!['cashin', 'cashout'].includes(type) || amount < 10 || !customerPhone) {
+    if (!['cashin', 'cashout'].includes(type) || 
+        typeof amount !== 'number' || amount < 10 || 
+        !customerPhone) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Invalid transaction data' 
+        error: 'Invalid transaction (type: cashin/cashout, amount >= R10)' 
       }, { status: 400 });
     }
 
-    const commissionRate = agent.level === 'bronze' ? 0.02 : agent.level === 'silver' ? 0.035 : 0.04;
-    const commission = amount * commissionRate;
+    const rates = { bronze: 0.02, silver: 0.035, gold: 0.04 };
+    const commissionRate = rates[agent.level as keyof typeof rates];
+    const commission = Math.round(amount * commissionRate * 100) / 100;
 
     agent.balance += commission;
     agent.transactions += 1;
 
-    // Tier upgrades
-    if (agent.transactions === 50 && agent.level === 'bronze') {
+    // Tier progression
+    if (agent.transactions >= 50 && agent.level === 'bronze') {
       agent.level = 'silver';
-    } else if (agent.transactions === 200 && agent.level === 'silver') {
+    } else if (agent.transactions >= 200 && agent.level === 'silver') {
       agent.level = 'gold';
     }
 
@@ -42,10 +48,11 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: {
+        transaction_id: Date.now().toString(),
         type,
         amount: `R${amount.toFixed(2)}`,
         commission: `R${commission.toFixed(2)}`,
-        commission_rate: `${(commissionRate * 100).toFixed(1)}%`,
+        rate: `${(commissionRate * 100).toFixed(1)}%`,
         new_balance: `R${agent.balance.toFixed(2)}`,
         transactions: agent.transactions,
         level: agent.level.toUpperCase(),
@@ -53,6 +60,9 @@ export async function POST(
     });
   } catch (error) {
     console.error('Transaction error:', error);
-    return NextResponse.json({ success: false, error: 'Transaction failed' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Transaction processing failed' 
+    }, { status: 500 });
   }
 }
