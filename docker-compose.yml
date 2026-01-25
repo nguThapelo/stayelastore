@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:8
+    container_name: stayelastore-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: stayelastore
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agency-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    command: serve
+
+  app:
+    build: .
+    container_name: stayelastore-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/stayelastore
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - NEXTAUTH_SECRET=stayelastore-production
+    depends_on:
+      - mongodb
+      - ollama
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  mongodb_data:
+  ollama_data:
