@@ -36,7 +36,7 @@ export default function AgencyBankingDashboard() {
       const res = await api.post('/agents/register', {
         phone: `082${Math.floor(Math.random() * 9000000 + 1000000)}`,
         name: `Soweto Spaza ${Date.now().toString().slice(-6)}`,
-        location: ['Soweto', 'Alexandra', 'Diepsloot', 'Tembisa'][Math.floor(Math.random() * 4)],
+        location: ['Soweto', 'Alexandra', 'Cosmo', 'Tembisa'][Math.floor(Math.random() * 4)],
       });
       
       setResponse(res.data);
@@ -169,7 +169,7 @@ export default function AgencyBankingDashboard() {
         }}>
           <button
             onClick={registerAgent}
-            disabled={loading || status !== 'connected'}
+            // disabled={loading || status !== 'connected'}
             style={{
               padding: '1.5rem 2rem',
               border: 'none',
@@ -205,7 +205,7 @@ export default function AgencyBankingDashboard() {
 
           <button
             onClick={processCashIn}
-            disabled={loading || !agentId || status !== 'connected'}
+            // disabled={loading || !agentId || status !== 'connected'}
             style={{
               padding: '1.5rem 2rem',
               border: 'none',
@@ -240,7 +240,7 @@ export default function AgencyBankingDashboard() {
 
           <button
             onClick={issueLoan}
-            disabled={loading || !agentId || status !== 'connected'}
+            // disabled={loading || !agentId || status !== 'connected'}
             style={{
               padding: '1.5rem 2rem',
               border: 'none',
